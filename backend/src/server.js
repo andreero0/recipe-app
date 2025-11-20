@@ -16,11 +16,12 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ success: true });
 });
 
+// Add item to favorites (generic for any module type)
 app.post("/api/favorites", async (req, res) => {
   try {
-    const { userId, recipeId, title, image, cookTime, servings } = req.body;
+    const { userId, moduleType, itemId, data } = req.body;
 
-    if (!userId || !recipeId || !title) {
+    if (!userId || !moduleType || !itemId || !data) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -28,11 +29,9 @@ app.post("/api/favorites", async (req, res) => {
       .insert(favoritesTable)
       .values({
         userId,
-        recipeId,
-        title,
-        image,
-        cookTime,
-        servings,
+        moduleType,
+        itemId: String(itemId),
+        data,
       })
       .returning();
 
@@ -43,35 +42,46 @@ app.post("/api/favorites", async (req, res) => {
   }
 });
 
-app.get("/api/favorites/:userId", async (req, res) => {
+// Get favorites by userId and moduleType
+app.get("/api/favorites/:userId/:moduleType", async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { userId, moduleType } = req.params;
 
     const userFavorites = await db
       .select()
       .from(favoritesTable)
-      .where(eq(favoritesTable.userId, userId));
+      .where(
+        and(
+          eq(favoritesTable.userId, userId),
+          eq(favoritesTable.moduleType, moduleType)
+        )
+      );
 
     res.status(200).json(userFavorites);
   } catch (error) {
-    console.log("Error fetching the favorites", error);
+    console.log("Error fetching favorites", error);
     res.status(500).json({ error: "Something went wrong" });
   }
 });
 
-app.delete("/api/favorites/:userId/:recipeId", async (req, res) => {
+// Delete favorite by userId, moduleType, and itemId
+app.delete("/api/favorites/:userId/:moduleType/:itemId", async (req, res) => {
   try {
-    const { userId, recipeId } = req.params;
+    const { userId, moduleType, itemId } = req.params;
 
     await db
       .delete(favoritesTable)
       .where(
-        and(eq(favoritesTable.userId, userId), eq(favoritesTable.recipeId, parseInt(recipeId)))
+        and(
+          eq(favoritesTable.userId, userId),
+          eq(favoritesTable.moduleType, moduleType),
+          eq(favoritesTable.itemId, String(itemId))
+        )
       );
 
     res.status(200).json({ message: "Favorite removed successfully" });
   } catch (error) {
-    console.log("Error removing a favorite", error);
+    console.log("Error removing favorite", error);
     res.status(500).json({ error: "Something went wrong" });
   }
 });

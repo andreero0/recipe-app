@@ -1,12 +1,11 @@
 import { pgTable, serial, text, timestamp, integer } from "drizzle-orm/pg-core";
 
+// Generic favorites table that works with any module type
 export const favoritesTable = pgTable("favorites", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
-  recipeId: integer("recipe_id").notNull(),
-  title: text("title").notNull(),
-  image: text("image"),
-  cookTime: text("cook_time"),
-  servings: text("servings"),
+  moduleType: text("module_type").notNull(), // 'recipes', 'movies', 'books', etc.
+  itemId: text("item_id").notNull(), // ID from external API
+  data: text("data").notNull(), // JSON string of full item data
   createdAt: timestamp("created_at").defaultNow(),
 });
